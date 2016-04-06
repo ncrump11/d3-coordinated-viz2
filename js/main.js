@@ -24,10 +24,10 @@ function setMap(){
 
     //create Albers equal area conic projection centered on France
     var projection = d3.geo.albers()
-        .center([3, 45])
-        .rotate([93, 0, 0])
+        .center([6, 44.5])
+        .rotate([93, 0, -3])
         .parallels([40, 55])
-        .scale(3800)
+        .scale(5000)
         .translate([width / 2, height / 2]);
 
     var path = d3.geo.path()
@@ -196,11 +196,11 @@ function choropleth(props, colorScale){
 function setChart(csvData, colorScale){
 
     //chart frame dimensions
-    var chartWidth = window.innerWidth * 0.425,
-        chartHeight = 473,
-        leftPadding = 25,
-        rightPadding = 2,
-        topBottomPadding = 5,
+    var chartWidth = window.innerWidth * .7,
+        chartHeight = window.innerHeight * 0.5,
+        leftPadding = 100,
+        rightPadding = 5,
+        topBottomPadding = 10,
         chartInnerWidth = chartWidth - leftPadding - rightPadding,
         chartInnerHeight = chartHeight - topBottomPadding * 2,
         translate = "translate(" + leftPadding + "," + topBottomPadding + ")";
@@ -221,8 +221,8 @@ function setChart(csvData, colorScale){
 
     //create a scale to size bars proportionally to frame
     var yScale = d3.scale.linear()
-        .range([0, chartHeight])
-        .domain([0, 105]);
+        .range([chartInnerHeight, 0])
+        .domain([0, 20]);
 
     //set bars for each county
     var bars = chart.selectAll(".bars")
@@ -230,12 +230,12 @@ function setChart(csvData, colorScale){
         .enter()
         .append("rect")
         .sort(function(a, b){
-            return a[expressed]-b[expressed]
+            return b[expressed]-a[expressed]
         })
         .attr("class", function(d){
             return "bars " + d.NAME;
         })
-        .attr("width", chartWidth / csvData.length - 1)
+        .attr("width", chartInnerWidth / csvData.length - .5)
         .attr("x", function(d, i){
             return i * (chartWidth / csvData.length);
         })
@@ -255,10 +255,10 @@ function setChart(csvData, colorScale){
         .enter()
         .append("text")
         .sort(function(a, b){
-            return a[expressed]-b[expressed]
+            return b[expressed]-a[expressed]
         })
         .attr("class", function(d){
-            return "numbers " + d.adm1_code;
+            return "numbers " + d.NAME;
         })
         .attr("text-anchor", "middle")
         .attr("x", function(d, i){
@@ -273,10 +273,11 @@ function setChart(csvData, colorScale){
         });
 
         var chartTitle = chart.append("text")
-        .attr("x", 40)
+        .attr("x", 200)
         .attr("y", 40)
         .attr("class", "chartTitle")
-        .text("Number of Variable " + expressed[3] + " in each county");
+        .text(expressed + " in each county");
+
         //create vertical axis generator
         var yAxis = d3.svg.axis()
             .scale(yScale)
