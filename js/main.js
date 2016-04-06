@@ -4,6 +4,7 @@
 //variables for data join
 var attrArray = ["Percent Adult Diabetes 2010", "Percent Obese Adults 2010", "Recreational Facilities per 1000 People", "Poverty Rate 2010", "Median Household Income 2010", "Farmer's Market per 1000 people"];
 var expressed = attrArray[0]
+console.log(expressed)
 ///begin script when window loads
 window.onload = setMap();
 
@@ -23,10 +24,10 @@ function setMap(){
 
     //create Albers equal area conic projection centered on France
     var projection = d3.geo.albers()
-        .center([0, 46.2])
-        .rotate([-2, 0, 0])
-        .parallels([43, 62])
-        .scale(2500)
+        .center([3, 45])
+        .rotate([93, 0, 0])
+        .parallels([40, 55])
+        .scale(3800)
         .translate([width / 2, height / 2]);
 
     var path = d3.geo.path()
@@ -36,8 +37,8 @@ function setMap(){
     var queue = d3_queue.queue();
     d3_queue.queue()
         .defer(d3.csv, "data/HealthData2.csv") //load attributes from csv
-        .defer(d3.json, "data/States.topojson") //load background spatial data
-        .defer(d3.json, "data/Wisco_county.topojson") //load background spatial data
+        .defer(d3.json, "data/states.topojson") //load background spatial data
+        .defer(d3.json, "data/wisco_county.topojson") //load background spatial data
         .await(callback);
 
 
@@ -48,9 +49,9 @@ function setMap(){
         setGraticule(map, path);
 
 	    //translate TopoJSON
-	    var allStates = topojson.feature(states, states.objects.States); //convert background to geojson feature
-            Wisconsin = topojson.feature(wisco, wisco.objects.Wisco_county).features; //convert MN/WI countiies to geojson feature
-	    
+	    var allStates = topojson.feature(states, states.objects.states); //convert background to geojson feature
+            Wisconsin = topojson.feature(wisco, wisco.objects.wisco_county).features; //convert MN/WI countiies to geojson feature
+	    console.log(Wisconsin)
         // add Europe countries to map
         var statesUS = map.append("path")
             .datum(allStates)
@@ -124,7 +125,7 @@ function joinData(Wisconsin, csvData) {
 }
 
 //add enumeration units to the map
-function setEnumerationUnits(Wisconsin, map, path){
+function setEnumerationUnits(Wisconsin, map, path, colorScale){
     console.log('hi')
     //add Counties to map
     var countyWI = map.selectAll(".countyWI")
@@ -136,7 +137,7 @@ function setEnumerationUnits(Wisconsin, map, path){
         })
         .attr("d", path)
         .style("fill", function(d){
-            return colorScale(d.properties, colorScale);
+            return choropleth(d.properties, colorScale);
         });
 }
 function makeColorScale(data){
