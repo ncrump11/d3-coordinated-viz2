@@ -5,6 +5,20 @@
     var attrArray = ["Percent Adult Diabetes 2010", "Percent Obese Adults 2010", "Recreational Facilities per 1000 People", "Poverty Rate 2010", "Median Household Income 2010", "Farmer's Market per 1000 people"];
     var expressed = attrArray[0]
     
+    //chart frame dimension
+    var chartWidth = window.innerWidth * .5,
+        chartHeight = window.innerHeight * 0.3,
+        leftPadding = 100,
+        rightPadding = 5,
+        topBottomPadding = 10,
+        chartInnerWidth = chartWidth - leftPadding - rightPadding,
+        chartInnerHeight = chartHeight - topBottomPadding * 2,
+        translate = "translate(" + leftPadding + "," + topBottomPadding + ")";
+
+    //create a scale to size bars proportionally to frame
+    var yScale = d3.scale.linear()
+        .range([0, chartInnerHeight])
+        .domain([0, 20]);
 
     ///begin script when window loads
     window.onload = setMap();
@@ -71,7 +85,9 @@
             //add coordinated visualization to the map
             setChart(csvData, colorScale);
 
-            createDropdown();
+            createDropdown(csvData);
+
+
            
         };
     };
@@ -138,7 +154,18 @@
             .attr("d", path)
             .style("fill", function(d){
                 return choropleth(d.properties, colorScale);
-            });
+            })
+            .on("mouseover", function(d){
+                highlight(d.properties);
+            })
+            .on("mouseout", function(d){
+                dehighlight(d.properties);
+            })
+            .on("mousemove", moveLabel);
+
+        //add style descriptor to each path
+        var desc = countyWI.append("desc")
+            .text('{"stroke": "#000", "stroke-width": "0"}');
     }
 
     function makeColorScale(data){
@@ -196,16 +223,6 @@
     //function to create coordinated bar chart
     function setChart(csvData, colorScale){
 
-        //chart frame dimensions
-        var chartWidth = window.innerWidth * .6,
-            chartHeight = window.innerHeight * 0.3,
-            leftPadding = 100,
-            rightPadding = 5,
-            topBottomPadding = 10,
-            chartInnerWidth = chartWidth - leftPadding - rightPadding,
-            chartInnerHeight = chartHeight - topBottomPadding * 2,
-            translate = "translate(" + leftPadding + "," + topBottomPadding + ")";
-
         //create a second svg element to hold the bar chart
         var chart = d3.select("body")
             .append("svg")
@@ -220,11 +237,6 @@
             .attr("height", chartInnerHeight)
             .attr("transform", translate);
 
-        //create a scale to size bars proportionally to frame
-        var yScale = d3.scale.linear()
-            .range([0, chartInnerHeight])
-            .domain([0, 20]);
-
         //set bars for each county
         var bars = chart.selectAll(".bar")
             .data(csvData)
@@ -237,20 +249,15 @@
                 return "bar " + d.NAME;
             })
             .attr("width", chartInnerWidth / csvData.length - 1)
-            .attr("x", function(d, i){
-                return i * (chartWidth / csvData.length);
-            })
-            .attr("height", function(d){
-                return yScale(parseFloat(d[expressed]));
-            })
-            .attr("y", function(d){
-                return chartInnerHeight - yScale(parseFloat(d[expressed]));
-            })
-            .style("fill", function(d){
-                return choropleth(d, colorScale);
-            });
+            .on("mouseover", highlight)
+            .on("mouseout", dehighlight)
+            .on("mousemove", moveLabel);
 
-            //annotate bars with attribute value text
+        //add style descriptor to each bar
+        var desc = bars.append("desc")
+            .text('{"stroke": "none", "stroke-width": "0"}');
+
+        //annotate bars with attribute value text
         var numbers = chart.selectAll(".numbers")
             .data(csvData)
             .enter()
@@ -296,14 +303,19 @@
             .attr("width", chartInnerWidth)
             .attr("height", chartInnerHeight)
             .attr("transform", translate);
+
+        //set bar position, heights, and colors
+        updateChart(bars, csvData.length, colorScale);
     };
         //function to create a dropdown menu for attribute selection
-    function createDropdown(){
+    function createDropdown(csvData){
         //add select element
         var dropdown = d3.select("body")
             .append("select")
-            .attr("class", "dropdown");
-
+            .attr("class", "dropdown")
+            .on("change", function(){
+                changeAttribute(this.value, csvData)
+            });
         //add initial option
         var titleOption = dropdown.append("option")
             .attr("class", "titleOption")
@@ -318,5 +330,132 @@
             .attr("value", function(d){ return d })
             .text(function(d){ return d });
     };
+    //dropdown change listener handler
+    function changeAttribute(attribute, csvData){
+        //change the expressed attribute
+        expressed = attribute;
 
+        //recreate the color scale
+        var colorScale = makeColorScale(csvData);
+
+        //recolor enumeration units
+        var countyWI = d3.selectAll(".countyWI")
+            .transition()
+            .duration(1000)
+            .style("fill", function(d){
+                return choropleth(d.properties, colorScale)
+            });
+        //set bars for each county
+        var bars = d3.selectAll(".bar")
+            //resort bars
+            .sort(function(a, b){
+                return a[expressed]-b[expressed]
+            })
+            .transition() //add animation
+            .delay(function(d, i){
+                return i * 20
+            })
+            .duration(500);
+
+        updateChart(bars, csvData.length, colorScale)
+    };
+    //function to position, size, and color bars in chart
+    function updateChart(bars, n, colorScale){
+        //position bars
+        bars.attr("x", function(d, i){
+            return i * (chartInnerWidth / n) + leftPadding;
+        })
+            //size and resize bars
+            .attr("height", function(d){
+                return yScale(parseFloat(d[expressed]));
+            })
+            .attr("y", function(d){
+                return chartInnerHeight - yScale(parseFloat(d[expressed]));
+            })
+            //color/recolor bars
+            .style("fill", function(d){
+                return choropleth(d, colorScale);
+            });
+        var chartTitle = d3.select(".chartTitle")
+        .text(expressed + " in each county");
+    };
+    //function to highlight enumeration units and bars
+    function highlight(props){
+        //change stroke
+        var selected = d3.selectAll("." + props.NAME)
+            .style({
+                "stroke": "blue",
+                "stroke-width": "2px"
+            })
+        setLabel(props);
+    };
+    //function to reset the element style on mouseout
+    function dehighlight(props){
+        var selected = d3.selectAll("." + props.NAME)
+            
+            .style({
+                "stroke": function(){
+                    return getStyle(this, "stroke")
+                },
+                "stroke-width": function(){
+                    return getStyle(this, "stroke-width")
+                }
+
+            });
+
+        function getStyle(element, styleName){
+            var styleText = d3.select(element)
+                .select("desc")
+                .text();
+
+            var styleObject = JSON.parse(styleText);
+
+            return styleObject[styleName];
+        };
+    d3.select(".infolabel")
+        .remove();   
+    };
+    //function to create dynamic label
+    function setLabel(props){
+        //label content
+        var labelAttribute = "<h1>" + props[expressed] +
+            "</h1><b>" + expressed + "</b>";
+
+        //create info label div
+        var infolabel = d3.select("body")
+            .append("div")
+            .attr({
+                "class": "infolabel",
+                "id": props.NAME + "_label"
+            })
+            .html(labelAttribute);
+
+        var regionName = infolabel.append("div")
+            .attr("class", "labelname")
+            .html(props.name);
+    };
+    function moveLabel(){
+        //get width of label
+        var labelWidth = d3.select(".infolabel")
+            .node()
+            .getBoundingClientRect()
+            .width;
+
+        //use coordinates of mousemove event to set label coordinates
+        var x1 = d3.event.clientX + 10,
+            y1 = d3.event.clientY - 75,
+            x2 = d3.event.clientX - labelWidth - 10,
+            y2 = d3.event.clientY + 25;
+
+        //horizontal label coordinate, testing for overflow
+        var x = d3.event.clientX > window.innerWidth - labelWidth - 20 ? x2 : x1; 
+        //vertical label coordinate, testing for overflow
+        var y = d3.event.clientY < 75 ? y2 : y1; 
+
+        d3.select(".infolabel")
+            .style({
+                "left": x + "px",
+                "top": y + "px"
+            });
+    };
 })();
