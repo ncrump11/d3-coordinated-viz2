@@ -30,9 +30,9 @@ body{
     margin-right: 20px;
     margin-left: 100px;
     width:52%;
-    height: 230px;
+    height: 415px;
     float: right;
-    font-size: 11pt;
+    font-size: 17pt;
     font-family: serif;
     border-style: solid
 }
@@ -68,7 +68,7 @@ body{
     background-color: #000;
     border: medium solid #999;
     float: right;
-    margin: 10px 20px 0 0;
+    margin: 10px 36px 0 0;
     border-color: #FFFFFF;
 }
 

@@ -2,7 +2,7 @@
 (function(){
 
     //variables for data join
-    var attrArray = ["Percent Adult Diabetes", "Percent Obese Adults", "Recreational Facilities per 1000 people", "Poverty Rate", "Median Household Income", "Farmer's Market per 1000 people"];
+    var attrArray = ["Percent Adult Diabetes", "Percent Obese Adults", "Recreational Facilities per 1000 people", "Poverty Rate", "Median Household Income", "Farmer's Market per 100 people"];
     var expressed = attrArray[0]
     
     //chart frame dimension
@@ -14,11 +14,6 @@
         chartInnerWidth = chartWidth - leftPadding - rightPadding,
         chartInnerHeight = chartHeight - topBottomPadding * 2,
         translate = "translate(" + leftPadding + "," + topBottomPadding + ")";
-
-    //create a scale to size bars proportionally to frame
-    // var yScale = d3.scale.linear()
-    //     .range([0, chartInnerHeight])
-    //     .domain([0, 40]);
 
     ///begin script when window loads
     window.onload = setMap();
@@ -37,7 +32,7 @@
             .attr("width", width)
             .attr("height", height);
 
-        //create Albers equal area conic projection centered on France
+        //create Albers equal area conic projection centered on Wisconsin
         var projection = d3.geo.albers()
             .center([6, 44.5])
             .rotate([93, 0, -3])
@@ -65,8 +60,8 @@
 
     	    //translate TopoJSON
     	    var allStates = topojson.feature(states, states.objects.states); //convert background to geojson feature
-                Wisconsin = topojson.feature(wisco, wisco.objects.wisco_county).features; //convert MN/WI countiies to geojson feature
-            // add Europe countries to map
+                Wisconsin = topojson.feature(wisco, wisco.objects.wisco_county).features; //convert WI counties to geojson feature
+            // add US States to map
             var statesUS = map.append("path")
                 .datum(allStates)
                 .attr("class", "statesUS")
@@ -78,7 +73,7 @@
             
              //create the color scale
             var colorScale = makeColorScale(csvData);
-                //loop through csv to assign each set of csv attribute values to geojson region
+                //loop through csv to assign each set of csv attribute values to geojson county
             setEnumerationUnits(Wisconsin, map, path, colorScale);
 
             //add coordinated visualization to the map
@@ -141,7 +136,7 @@
 
     //add enumeration units to the map
     function setEnumerationUnits(Wisconsin, map, path, colorScale){
-        //add Counties to map
+        //add counties to map
         var countyWI = map.selectAll(".countyWI")
             .data(Wisconsin)
             .enter()
@@ -210,7 +205,7 @@
         if (val && val != NaN){
             return colorScale(val);
         } else {
-            return "#708090";
+            return "#999";
 
         };
     };
@@ -234,7 +229,7 @@
             .attr("transform", translate);
 
         var yScale = d3.scale.linear()
-              //change scale values dynamically with max value of each variable
+              //dynamic change for y scale using max for each variable
               .domain([0, d3.max(csvData,function(d){ return parseFloat(d[expressed])})*1.1])
               //output this between 0 and chartInnerHeight
               .range([0, chartInnerHeight]);
@@ -316,7 +311,7 @@
         //change the expressed attribute
         expressed = attribute;
         var yScale = d3.scale.linear()
-              //change scale values dynamically with max value of each variable
+              //dynamic change for y scale using max for each variable
               .domain([0, d3.max(csvData,function(d){ return parseFloat(d[expressed])})*1.1])
               //output this between 0 and chartInnerHeight
               .range([0, chartInnerHeight]);
@@ -355,15 +350,15 @@
             //size and resize bars
             .attr("height", function(d, i){
                 var yScale = d3.scale.linear()
-              //change scale values dynamically with max value of each variable
-              .domain([0, d3.max(csvData,function(d){ return parseFloat(d[expressed])})* 1.2])
-              //output this between 0 and chartInnerHeight
-              .range([0, chartInnerHeight]);
+                      //dynamic change for y scale using max value for each variable
+                      .domain([0, d3.max(csvData,function(d){ return parseFloat(d[expressed])})* 1.2])
+                      //output this between 0 and chartInnerHeight
+                      .range([0, chartInnerHeight]);
                 return yScale(parseFloat(d[expressed])) + 10;
             })
             .attr("y", function(d,i){
                 var yScale = d3.scale.linear()
-                      //change scale values dynamically with max value of each variable
+                      //dynamic change for y scale using max for each variable
                       .domain([0, d3.max(csvData,function(d){ return parseFloat(d[expressed])})* 1.2])
                       //output this between 0 and chartInnerHeight
                       .range([0, chartInnerHeight]);
@@ -373,13 +368,10 @@
             .style("fill", function(d){
                 return choropleth(d, colorScale);
             });
+
         var chartTitle = d3.select(".chartTitle")
-        .text(expressed);
-        var yScale = d3.scale.linear()
-              //change scale values dynamically with max value of each variable
-              .domain([0, d3.max(csvData,function(d){ return parseFloat(d[expressed])})* 1.2])
-              //output this between 0 and chartInnerHeight
-              .range([0, chartInnerHeight]);
+        .text(expressed + " in Each County");
+        
     };
     //function to highlight enumeration units and bars
     function highlight(props){
