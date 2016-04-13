@@ -16,9 +16,9 @@
         translate = "translate(" + leftPadding + "," + topBottomPadding + ")";
 
     //create a scale to size bars proportionally to frame
-    var yScale = d3.scale.linear()
-        .range([0, chartInnerHeight])
-        .domain([0, 20]);
+    // var yScale = d3.scale.linear()
+    //     .range([0, chartInnerHeight])
+    //     .domain([0, 40]);
 
     ///begin script when window loads
     window.onload = setMap();
@@ -42,7 +42,7 @@
             .center([6, 44.5])
             .rotate([93, 0, -3])
             .parallels([40, 55])
-            .scale(5000)
+            .scale(8000)
             .translate([width / 2, height / 2]);
 
         var path = d3.geo.path()
@@ -147,6 +147,7 @@
             .enter()
             .append("path")
             .attr("class", function(d){
+                
                 return "countyWI " + d.properties.NAME;
             })
             .attr("d", path)
@@ -232,6 +233,12 @@
             .attr("height", chartInnerHeight)
             .attr("transform", translate);
 
+        var yScale = d3.scale.linear()
+              //change scale values dynamically with max value of each variable
+              .domain([0, d3.max(csvData,function(d){ return parseFloat(d[expressed])})*1.1])
+              //output this between 0 and chartInnerHeight
+              .range([0, chartInnerHeight]);
+
         //set bars for each county
         var bars = chart.selectAll(".bar")
             .data(csvData)
@@ -279,7 +286,7 @@
             .attr("transform", translate);
 
         //set bar position, heights, and colors
-        updateChart(bars, csvData.length, colorScale);
+        updateChart(bars, csvData.length, colorScale, csvData);
     };
         //function to create a dropdown menu for attribute selection
     function createDropdown(csvData){
@@ -308,6 +315,11 @@
     function changeAttribute(attribute, csvData){
         //change the expressed attribute
         expressed = attribute;
+        var yScale = d3.scale.linear()
+              //change scale values dynamically with max value of each variable
+              .domain([0, d3.max(csvData,function(d){ return parseFloat(d[expressed])})*1.1])
+              //output this between 0 and chartInnerHeight
+              .range([0, chartInnerHeight]);
 
         //recreate the color scale
         var colorScale = makeColorScale(csvData);
@@ -331,20 +343,30 @@
             })
             .duration(500);
 
-        updateChart(bars, csvData.length, colorScale)
+        updateChart(bars, csvData.length, colorScale, csvData)
     };
     //function to position, size, and color bars in chart
-    function updateChart(bars, n, colorScale){
+    function updateChart(bars, n, colorScale, csvData){
 
         //position bars
         bars.attr("x", function(d, i){
             return i * (chartInnerWidth / n) + leftPadding;
         })
             //size and resize bars
-            .attr("height", function(d){
+            .attr("height", function(d, i){
+                var yScale = d3.scale.linear()
+              //change scale values dynamically with max value of each variable
+              .domain([0, d3.max(csvData,function(d){ return parseFloat(d[expressed])})* 1.2])
+              //output this between 0 and chartInnerHeight
+              .range([0, chartInnerHeight]);
                 return yScale(parseFloat(d[expressed])) + 10;
             })
-            .attr("y", function(d){
+            .attr("y", function(d,i){
+                var yScale = d3.scale.linear()
+                      //change scale values dynamically with max value of each variable
+                      .domain([0, d3.max(csvData,function(d){ return parseFloat(d[expressed])})* 1.2])
+                      //output this between 0 and chartInnerHeight
+                      .range([0, chartInnerHeight]);
                 return chartInnerHeight - yScale(parseFloat(d[expressed]));
             })
             //color/recolor bars
@@ -353,13 +375,18 @@
             });
         var chartTitle = d3.select(".chartTitle")
         .text(expressed);
+        var yScale = d3.scale.linear()
+              //change scale values dynamically with max value of each variable
+              .domain([0, d3.max(csvData,function(d){ return parseFloat(d[expressed])})* 1.2])
+              //output this between 0 and chartInnerHeight
+              .range([0, chartInnerHeight]);
     };
     //function to highlight enumeration units and bars
     function highlight(props){
         //change stroke
         var selected = d3.selectAll("." + props.NAME)
             .style({
-                "stroke": "blue",
+                "stroke": "#81FC81",
                 "stroke-width": "2px"
             })
         setLabel(props);
