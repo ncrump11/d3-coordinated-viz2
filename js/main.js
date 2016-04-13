@@ -2,13 +2,13 @@
 (function(){
 
     //variables for data join
-    var attrArray = ["Percent Adult Diabetes 2010", "Percent Obese Adults 2010", "Recreational Facilities per 1000 People", "Poverty Rate 2010", "Median Household Income 2010", "Farmer's Market per 1000 people"];
+    var attrArray = ["Percent Adult Diabetes", "Percent Obese Adults", "Recreational Facilities per 1000 people", "Poverty Rate", "Median Household Income", "Farmer's Market per 1000 people"];
     var expressed = attrArray[0]
     
     //chart frame dimension
     var chartWidth = window.innerWidth * .5,
-        chartHeight = window.innerHeight * 0.3,
-        leftPadding = 100,
+        chartHeight = window.innerHeight * .5,
+        leftPadding = 50,
         rightPadding = 5,
         topBottomPadding = 10,
         chartInnerWidth = chartWidth - leftPadding - rightPadding,
@@ -28,10 +28,10 @@
     	
     	//map frame dimensions
         var width = window.innerWidth * 0.4,
-            height = window.innerHeight * 1.2;
+            height = window.innerHeight * 1;
 
         //create new svg container for the map
-        var map = d3.select("body")
+        var map = d3.select("#map")
             .append("svg")
             .attr("class", "map")
             .attr("width", width)
@@ -66,7 +66,6 @@
     	    //translate TopoJSON
     	    var allStates = topojson.feature(states, states.objects.states); //convert background to geojson feature
                 Wisconsin = topojson.feature(wisco, wisco.objects.wisco_county).features; //convert MN/WI countiies to geojson feature
-    	    console.log(Wisconsin)
             // add Europe countries to map
             var statesUS = map.append("path")
                 .datum(allStates)
@@ -76,7 +75,7 @@
 
             //join csv data to GeoJSON enumeration units
             Wisconsin = joinData(Wisconsin, csvData);
-
+            
              //create the color scale
             var colorScale = makeColorScale(csvData);
                 //loop through csv to assign each set of csv attribute values to geojson region
@@ -116,13 +115,13 @@
 
         for (var i=0; i<csvData.length; i++){
 
-                var csvCounty = csvData[i]; //the current region
+                var csvCounty = csvData[i]; //the current county
                 var csvKey = csvCounty.NAME; //the CSV primary key
 
-                //loop through geojson regions to find correct region
+                //loop through geojson counties to find correct one
                 for (var a=0; a<Wisconsin.length; a++){
 
-                    var props = Wisconsin[a].properties; //the current region geojson properties
+                    var props = Wisconsin[a].properties; //the current county geojson properties
                     var key = props.NAME; //the geojson primary key
 
                     //where primary keys match, transfer csv data to geojson properties object
@@ -132,7 +131,7 @@
                         attrArray.forEach(function(attr){
                             var val = parseFloat(csvCounty[attr]); //get csv attribute value
                             props[attr] = val; //assign attribute and value to geojson properties
-                        
+                            
                         });
                     };
                 };
@@ -142,7 +141,6 @@
 
     //add enumeration units to the map
     function setEnumerationUnits(Wisconsin, map, path, colorScale){
-        console.log('hi')
         //add Counties to map
         var countyWI = map.selectAll(".countyWI")
             .data(Wisconsin)
@@ -165,22 +163,21 @@
 
         //add style descriptor to each path
         var desc = countyWI.append("desc")
-            .text('{"stroke": "#000", "stroke-width": "0"}');
+            .text('{"stroke": "#FFFFFF", "stroke-width": "0"}');
     }
 
     function makeColorScale(data){
         var colorClasses = [
-            "#feedde",
-            "#fdbe85",
-            "#fd8d3c",
-            "#e6550d",
-            "#a63603"
+            "#f2f0f7",
+            "#cbc9e2",
+            "#9e9ac8",
+            "#756bb1",
+            "#54278f"
         ];
 
         //create color scale generator
         var colorScale = d3.scale.threshold()
             .range(colorClasses);
-
 
         //build array of all values of the expressed attribute
         var domainArray = [];
@@ -202,9 +199,7 @@
         colorScale.domain(domainArray);
 
         return colorScale;
-
     };
-
     //function to test for data value and return color
     function choropleth(props, colorScale){
 
@@ -214,7 +209,7 @@
         if (val && val != NaN){
             return colorScale(val);
         } else {
-            return "#CCC";
+            return "#708090";
 
         };
     };
@@ -224,7 +219,7 @@
     function setChart(csvData, colorScale){
 
         //create a second svg element to hold the bar chart
-        var chart = d3.select("body")
+        var chart = d3.select("#chart")
             .append("svg")
             .attr("width", chartWidth)
             .attr("height", chartHeight)
@@ -258,30 +253,9 @@
             .text('{"stroke": "none", "stroke-width": "0"}');
 
         //annotate bars with attribute value text
-        var numbers = chart.selectAll(".numbers")
-            .data(csvData)
-            .enter()
-            .append("text")
-            .sort(function(a, b){
-                return a[expressed]-b[expressed]
-            })
-            .attr("class", function(d){
-                return "numbers " + d.NAME;
-            })
-            .attr("text-anchor", "middle")
-            .attr("x", function(d, i){
-                var fraction = chartWidth / csvData.length;
-                return i * fraction + (fraction - 1) / 2;
-            })
-            .attr("y", function(d){
-                return chartHeight - yScale(parseFloat(d[expressed])) + 15;
-            })
-            .text(function(d){
-                return d[expressed];
-            });
 
         var chartTitle = chart.append("text")
-        .attr("x", 200)
+        .attr("x", 100)
         .attr("y", 40)
         .attr("class", "chartTitle")
         .text(expressed + " in each county");
@@ -361,13 +335,14 @@
     };
     //function to position, size, and color bars in chart
     function updateChart(bars, n, colorScale){
+
         //position bars
         bars.attr("x", function(d, i){
             return i * (chartInnerWidth / n) + leftPadding;
         })
             //size and resize bars
             .attr("height", function(d){
-                return yScale(parseFloat(d[expressed]));
+                return yScale(parseFloat(d[expressed])) + 10;
             })
             .attr("y", function(d){
                 return chartInnerHeight - yScale(parseFloat(d[expressed]));
@@ -377,7 +352,7 @@
                 return choropleth(d, colorScale);
             });
         var chartTitle = d3.select(".chartTitle")
-        .text(expressed + " in each county");
+        .text(expressed);
     };
     //function to highlight enumeration units and bars
     function highlight(props){
@@ -417,6 +392,7 @@
     };
     //function to create dynamic label
     function setLabel(props){
+        
         //label content
         var labelAttribute = "<h1>" + props[expressed] +
             "</h1><b>" + expressed + "</b>";
@@ -430,9 +406,9 @@
             })
             .html(labelAttribute);
 
-        var regionName = infolabel.append("div")
+        var countyName = infolabel.append("div")
             .attr("class", "labelname")
-            .html(props.name);
+            .html(props.NAME + " County");
     };
     function moveLabel(){
         //get width of label
@@ -457,5 +433,5 @@
                 "left": x + "px",
                 "top": y + "px"
             });
-    };
+    }; 
 })();

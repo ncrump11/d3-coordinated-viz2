@@ -1,4 +1,4 @@
-FIPS,State,NAME,Percent Adult Diabetes 2010,Percent Obese Adults 2010,Recreational Facilities per 1000 people,Poverty Rate 2010,Median Household Income 2010 (dollars),Farmer's Market per 1000 people (2009)
+FIPS,State,NAME,Percent Adult Diabetes,Percent Obese Adults,Recreational Facilities per 1000 people,Poverty Rate,Median Household Income,Farmer's Market per 1000 people
 55001,WI,Adams,10.8,30.2,1,14.9,42347,0.0497809638
 55003,WI,Ashland,9.2,30.5,2,18.9,36651,0.0618008776
 55005,WI,Barron,8.5,32.8,8,13.6,42805,0.0877366147
